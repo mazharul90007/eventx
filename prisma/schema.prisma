@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  INDIVIDUAL
+  ORGANIZATION
+  ADMIN
+}
+
+enum RSVPStatus {
+  GOING
+  INTERESTED
+  NOT_GOING
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  email       String   @unique
+  phone       String?  @unique
+  password    String
+  name        String?
+  type        UserType
+  interests   String[]
+  geoPrefs    String[]
+  events      Event[]  @relation("UserEvents")
+  rsvps       RSVP[]   @relation("UserRSVPs")
+  campaigns   Campaign[] @relation("UserCampaigns")
+  booths      Booth[]  @relation("UserBooths")
+  notifications Notification[] @relation("UserNotifications")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  location    String
+  date        DateTime
+  tags        String[]
+  creatorId   String   @db.ObjectId
+  creator     User     @relation(fields: [creatorId], references: [id], name: "UserEvents")
+  rsvps       RSVP[]   @relation("EventRSVPs")
+  campaigns   Campaign[] @relation("EventCampaigns")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RSVP {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  eventId   String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], name: "UserRSVPs")
+  event     Event    @relation(fields: [eventId], references: [id], name: "EventRSVPs")
+  status    RSVPStatus
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  eventId     String   @db.ObjectId
+  event       Event    @relation(fields: [eventId], references: [id], name: "EventCampaigns")
+  ownerId     String   @db.ObjectId
+  owner       User     @relation(fields: [ownerId], references: [id], name: "UserCampaigns")
+  audienceId  String?  @unique @db.ObjectId
+  audience    Audience? @relation(fields: [audienceId], references: [id])
+  budget      Float
+  status      CampaignStatus
+  stats       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Audience {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  ageMin    Int?
+  ageMax    Int?
+  gender    String?
+  cities    String[]
+  interests String[]
+  campaign  Campaign?
+}
+
+model Booth {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId     String   @db.ObjectId
+  owner       User     @relation(fields: [ownerId], references: [id], name: "UserBooths")
+  title       String
+  description String
+  category    String
+  isSponsored Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], name: "UserNotifications")
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+} 
