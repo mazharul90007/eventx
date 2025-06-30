@@ -34,6 +34,9 @@ model User {
   type        UserType
   interests   String[]
   geoPrefs    String[]
+  isActive    Boolean  @default(true)
+  isEmailVerified Boolean @default(false)
+  refreshToken String?
   events      Event[]  @relation("UserEvents")
   rsvps       RSVP[]   @relation("UserRSVPs")
   campaigns   Campaign[] @relation("UserCampaigns")
